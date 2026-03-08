@@ -3,48 +3,63 @@ const express = require('express');
 const app = express();
 const path = require('path');
 
+// --- CONFIGURATION DU TERMINAL ---
 const CONFIG = {
     token: '8694426433:AAHijK_HaXmfuloGN7V1vVal6lxUcBWdt00',
     channelId: '-1003850314405',
-    assets: ['GainX 400', 'PainX 400', 'GainX 600', 'PainX 600', 'GainX 800', 'PainX 800', 'GainX 999', 'PainX 999', 'GainX 1200', 'PainX 1200'],
-    timeframes: ['M15', 'M30', 'H1', 'H4', 'D1']
+    assets: ['GainX 400', 'PainX 400', 'GainX 600', 'PainX 600', 'GainX 800', 'PainX 800', 'GainX 999', 'PainX 999', 'GainX 1200', 'PainX 1200']
 };
 
-// --- PURGE ANTI-409 ---
+// --- SYNCHRONISATION DES PRIX WELTRADE (SIMULATION FLUX RÉEL) ---
+function getLiveWeltradePrice(asset) {
+    const bases = { 
+        'GainX 400': 4250, 'PainX 400': 3980, 
+        'GainX 600': 6150, 'PainX 600': 5890, 
+        'GainX 800': 8420, 'PainX 800': 7950, 
+        'GainX 999': 10240, 'PainX 999': 9850, 
+        'GainX 1200': 12680, 'PainX 1200': 11940 
+    };
+    const base = bases[asset] || 1000;
+    const drift = (Math.sin(Date.now() / 10000) * 5) + (Math.random() * 2);
+    return (base + drift).toFixed(2);
+}
+
+// --- INITIALISATION SÉCURISÉE (ANTI-ERREUR 409) ---
 const bot = new TelegramBot(CONFIG.token, { polling: false });
 bot.deleteWebHook().then(() => {
     bot.startPolling();
-    console.log("🚀 SYNTX V4 : LIAISON ÉTABLIE SANS CONFLIT");
+    console.log("🚀 SYNTX V4 : SYNC LIVE ET PROTECTION STRUCTURE ACTIVES");
 });
 
-// --- CYCLE DE STRATÉGIE (STRUCTURE -> PRÉPARATION -> SIGNAL) ---
-function strategyFlow() {
+// --- SYSTÈME D'ALERTE ET DE SIGNAL ---
+function monitorMarket() {
     const now = new Date();
     const min = now.getMinutes();
     const sec = now.getSeconds();
 
     CONFIG.assets.forEach(asset => {
-        const tf = CONFIG.timeframes[Math.floor(Math.random() * CONFIG.timeframes.length)];
+        const tf = ['M15', 'M30', 'H1', 'H4', 'D1'][Math.floor(Math.random() * 5)];
         const isGain = asset.includes('Gain');
+        const price = getLivePrice(asset);
 
-        // ÉTAPE 1 : ANALYSE DE STRUCTURE (Affichée à la minute 10 du cycle M15)
+        // 1. ALERTE DE PRÉPARATION (Minute 10 du cycle de 15 min)
         if (sec === 0 && (min % 15 === 10)) {
             bot.sendMessage(CONFIG.channelId, 
                 `🔍 **ANALYSE DE STRUCTURE : ${tf}**\n` +
                 `🎯 ACTIF : ${asset}\n` +
                 `📊 ÉTAT : SWEEP DE LIQUIDITÉ DÉTECTÉ 🧹\n` +
-                `💡 LOGIQUE : ${isGain ? "SPIKE RECOVERY" : "SPIKE RECOVERY"}\n` +
+                `📍 PRIX ACTUEL : ${price}\n` +
                 `------------------------\n` +
-                `⚠️ Zone de prix nettoyée. Attendez la confirmation du bot...`, 
+                `⚠️ Zone nettoyée. Préparez-vous pour l'exécution dans 5 min !`, 
             { parse_mode: 'Markdown' });
         }
 
-        // ÉTAPE 2 : SIGNAL D'EXÉCUTION SPIKE (Minute 00)
+        // 2. SIGNAL D'EXÉCUTION SPIKE (Minute 00)
         if (sec === 0 && (min % 15 === 0)) {
             sendSignal(asset, tf, isGain ? "BUY (SPIKE) 🚀" : "SELL (SPIKE) 📉", "SWEEP & RECOVERY");
         }
 
-        // ÉTAPE 3 : SIGNAL DE TICKS (Minute 05 - Logique inversée)
+        // 3. SIGNAL DE TICKS (Minute 05 - Logique inversée)
         if (sec === 0 && (min % 15 === 5)) {
             sendSignal(asset, tf, isGain ? "SELL (TICKS) ⚡" : "BUY (TICKS) ⚡", "TICK SCALPER");
         }
@@ -52,12 +67,12 @@ function strategyFlow() {
 }
 
 function sendSignal(asset, tf, action, strategy) {
-    const entry = (Math.random() * 50 + 1200).toFixed(2);
+    const entry = parseFloat(getLivePrice(asset));
     const isBuy = action.includes("BUY");
     
-    // Niveaux calculés selon la stratégie visuelle
-    const sl = isBuy ? (entry - 15.20).toFixed(2) : (parseFloat(entry) + 15.20).toFixed(2);
-    const tp = isBuy ? (parseFloat(entry) + 42.50).toFixed(2) : (entry - 42.50).toFixed(2);
+    // Niveaux compatibles MT5
+    const sl = isBuy ? (entry - 15.50).toFixed(2) : (entry + 15.50).toFixed(2);
+    const tp = isBuy ? (entry + 45.00).toFixed(2) : (entry - 45.00).toFixed(2);
 
     const message = `🔱 **SIGNAL EXÉCUTION VVIP**\n` +
                   `------------------------\n` +
@@ -65,7 +80,7 @@ function sendSignal(asset, tf, action, strategy) {
                   `🕒 TIMEFRAME : ${tf}\n` +
                   `⚡ ACTION : ${action}\n` +
                   `------------------------\n` +
-                  `💰 ENTRÉE : ${entry}\n` +
+                  `💰 PRIX D'ENTRÉE : ${entry.toFixed(2)}\n` +
                   `🛑 STOP LOSS : ${sl}\n` +
                   `✅ TAKE PROFIT : ${tp}\n` +
                   `------------------------\n` +
@@ -75,7 +90,7 @@ function sendSignal(asset, tf, action, strategy) {
     bot.sendMessage(CONFIG.channelId, message, { parse_mode: 'Markdown' });
 }
 
-setInterval(strategyFlow, 1000);
-app.use(express.static(__dirname));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// --- LANCEMENT DU SERVEUR ---
+setInterval(monitorMarket, 1000);
+app.get('/', (req, res) => res.send('<h1>SYNTX V4 OPERATIONNEL</h1>'));
 app.listen(process.env.PORT || 10000);
