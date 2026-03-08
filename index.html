@@ -2,47 +2,26 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Mc Anthonio | Bloomberg SYNTX</title>
+    <title>MC ANTHONIO | VVIP TERMINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #000; color: #ffb800; font-family: 'Courier New', monospace; }
-        .panel { border: 1px solid #333; background: #0a0a0a; padding: 15px; border-radius: 4px; }
-        .alert-active { border-color: #ffb800; box-shadow: 0 0 15px #ffb800; }
+        .grid-box { border: 1px solid #333; background: #050505; padding: 20px; text-align: center; }
     </style>
 </head>
-<body class="p-6">
-    <header class="border-b border-orange-600 mb-6 pb-2">
-        <h1 class="text-white font-bold text-xl uppercase">RAKOTOMANGA MICHEL ANTHONIO</h1>
-        <div class="text-xs text-orange-500">ANTANANARIVO UTC+3 | WELTRADE PAIN & GAIN MONITOR</div>
-    </header>
+<body class="p-8">
+    <div class="border-b-2 border-orange-600 mb-8 pb-4">
+        <h1 class="text-3xl font-bold text-white">RAKOTOMANGA MICHEL ANTHONIO</h1>
+        <p class="text-orange-500 font-bold">🔱 SYNTX V4 - WELTRADE REAL-TIME MONITOR</p>
+    </div>
 
-    <div id="countdown-zone" class="mb-6"></div>
-
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
         <script>
-            const indices = ['GainX 400', 'PainX 400', 'GainX 600', 'PainX 600', 'GainX 800', 'PainX 800', 'GainX 999', 'PainX 999', 'GainX 1200', 'PainX 1200'];
-            indices.forEach(idx => {
-                document.write(`<div class="panel text-xs"><div>${idx}</div><div class="text-blue-500 mt-2">SCANNING...</div></div>`);
+            const assets = ['GainX 400', 'PainX 400', 'GainX 600', 'PainX 600', 'GainX 800', 'PainX 800', 'GainX 999', 'PainX 999', 'GainX 1200', 'PainX 1200'];
+            assets.forEach(a => {
+                document.write(`<div class="grid-box"><div class="text-lg mb-2">${a}</div><div class="text-blue-400 text-xs animate-pulse">MARKET SCANNING...</div></div>`);
             });
         </script>
     </div>
-
-    <script>
-        const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
-        function triggerCountdown(asset) {
-            let time = 120;
-            audio.play().catch(() => {});
-            const zone = document.getElementById('countdown-zone');
-            const timer = setInterval(() => {
-                time--;
-                zone.innerHTML = `<div class="bg-orange-900 border-2 border-orange-500 p-4 rounded animate-pulse">
-                    <span class="font-bold text-white uppercase">⚠️ PRÉPARATION : ${asset} | DÉCOMPTE : ${time}s</span>
-                </div>`;
-                if(time <= 0) { clearInterval(timer); zone.innerHTML = ''; }
-            }, 1000);
-        }
-        // Simulation pour test visuel toutes les minutes
-        setInterval(() => triggerCountdown(indices[Math.floor(Math.random()*10)]), 60000);
-    </script>
 </body>
-  </html>
+</html>
