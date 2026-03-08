@@ -1,6 +1,7 @@
 {
-  "name": "mc-anthonio-v9",
-  "version": "9.0.0",
+  "name": "mc-anthonio-final-v4",
+  "version": "4.0.0",
+  "description": "Terminal de Trading Haute Performance",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
