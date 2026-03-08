@@ -1,6 +1,6 @@
 {
-  "name": "mc-anthonio-terminal-v4",
-  "version": "4.0.0",
+  "name": "mc-anthonio-v9",
+  "version": "9.0.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
