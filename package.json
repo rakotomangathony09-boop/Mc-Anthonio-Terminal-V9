@@ -1,11 +1,10 @@
 {
   "name": "mc-anthonio-terminal",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "main": "index.js",
   "dependencies": {
     "node-telegram-bot-api": "^0.66.0",
-    "express": "^4.18.2",
-    "axios": "^1.6.0"
+    "express": "^4.18.2"
   },
   "scripts": {
     "start": "node index.js"
