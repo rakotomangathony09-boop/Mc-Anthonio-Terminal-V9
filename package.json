@@ -1,14 +1,14 @@
 {
-  "name": "mc-anthonio-final-v4",
+  "name": "mc-anthonio-terminal-v9",
   "version": "4.0.0",
-  "description": "Terminal de Trading Haute Performance",
+  "description": "Terminal de trading automatique VVIP",
   "main": "index.js",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0",
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  },
   "scripts": {
     "start": "node index.js"
-  },
-  "dependencies": {
-    "node-telegram-bot-api": "^0.61.0",
-    "express": "^4.18.2",
-    "path": "^0.12.7"
   }
 }
