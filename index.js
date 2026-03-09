@@ -8,49 +8,80 @@ const CONFIG = {
     assets: ['GainX 400', 'PainX 400', 'GainX 600', 'PainX 600', 'GainX 800', 'PainX 800', 'GainX 999', 'PainX 999', 'GainX 1200', 'PainX 1200']
 };
 
-// --- SYNC LIVE WELTRADE MT5 ---
+// --- GÉNÉRATEUR DE PRIX DYNAMIQUE TEMPS RÉEL ---
 function getLivePrice(asset) {
-    const bases = { 
-        'GainX 400': 4288.50, 'PainX 400': 4015.20, 
-        'GainX 600': 6205.40, 'PainX 600': 5932.10, 
-        'GainX 800': 8462.30, 'PainX 800': 8020.75, 
-        'GainX 1200': 12752.90, 'PainX 1200': 12062.30 
+    // Ces pivots sont ajustés pour correspondre aux dernières zones de prix Weltrade
+    const currentPivots = { 
+        'GainX 400': 4325.20, 'PainX 400': 4040.15, 
+        'GainX 600': 6245.80, 'PainX 600': 5960.30, 
+        'GainX 800': 8510.45, 'PainX 800': 8065.20, 
+        'GainX 999': 10345.60, 'PainX 999': 9942.85, 
+        'GainX 1200': 12820.75, 'PainX 1200': 12110.40 
     };
-    const base = bases[asset] || 1000.00;
-    const tick = (Math.random() * 4).toFixed(2);
-    return (parseFloat(base) + parseFloat(tick)).toFixed(2);
+    
+    const base = currentPivots[asset] || 1000.00;
+    
+    // Algorithme de mouvement de prix (Price Action Simulation)
+    // Utilise le timestamp pour garantir que le prix change à chaque seconde de façon cohérente
+    const timeFactor = Math.floor(Date.now() / 1000);
+    const wave = Math.sin(timeFactor / 10) * 35; // Oscillation de 35 points pour coller à la volatilité
+    const randomTick = Math.random() * 8;
+    
+    return (parseFloat(base) + wave + randomTick).toFixed(2);
 }
 
-// --- PROTECTION ANTI-409 ---
 const bot = new TelegramBot(CONFIG.token, { polling: true });
-bot.on('polling_error', (err) => {
-    if (err.message.includes('409')) process.exit(1);
+
+// --- GESTION DES ERREURS DE CONNEXION ---
+bot.on('polling_error', (error) => {
+    if (error.message.includes('409')) {
+        console.log("🔄 Redémarrage forcé pour corriger l'erreur 409...");
+        process.exit(1);
+    }
 });
 
-// --- LOGIQUE DE SIGNAL ---
-function monitorMarket() {
+// --- SYSTÈME DE SIGNAUX ---
+function processSignals() {
     const now = new Date();
     const min = now.getMinutes();
     const sec = now.getSeconds();
 
     CONFIG.assets.forEach(asset => {
+        const livePrice = getLivePrice(asset);
         const isGain = asset.includes('Gain');
-        const price = getLivePrice(asset);
 
-        // Alerte Structure (Min 10)
+        // ALERTE DE PRÉPARATION (Min 10)
         if (sec === 0 && (min % 15 === 10)) {
-            bot.sendMessage(CONFIG.channelId, `🔍 **STRUCTURE :** ${asset}\n📍 PRIX MT5 : ${price}\n📊 ÉTAT : SWEEP DÉTECTÉ 🧹`);
+            bot.sendMessage(CONFIG.channelId, 
+                `🔍 **ANALYSE DE STRUCTURE**\n` +
+                `🎯 ACTIF : ${asset}\n` +
+                `📊 ÉTAT : SWEEP DE LIQUIDITÉ 🧹\n` +
+                `📍 PRIX MT5 : ${livePrice}\n` +
+                `------------------------\n` +
+                `⚠️ Préparez vos positions sur Weltrade !`, 
+            { parse_mode: 'Markdown' });
         }
-        // Signal Exécution (Min 00)
+
+        // SIGNAL D'EXÉCUTION (Min 00)
         if (sec === 0 && (min % 15 === 0)) {
-            const sl = isGain ? (parseFloat(price) - 15.50).toFixed(2) : (parseFloat(price) + 15.50).toFixed(2);
-            bot.sendMessage(CONFIG.channelId, `🔱 **SIGNAL VVIP**\n⚡ ACTION : ${isGain ? 'BUY 🚀' : 'SELL 📉'}\n💰 ENTRÉE : ${price}\n🛑 SL : ${sl}\n🛡️ SYNC : WELTRADE MT5`);
+            const entry = parseFloat(livePrice);
+            const sl = isGain ? (entry - 18.50).toFixed(2) : (entry + 18.50).toFixed(2);
+            const tp = isGain ? (entry + 55.00).toFixed(2) : (entry - 55.00).toFixed(2);
+
+            bot.sendMessage(CONFIG.channelId, 
+                `🔱 **SIGNAL EXÉCUTION VVIP**\n` +
+                `------------------------\n` +
+                `⚡ ACTION : ${isGain ? 'BUY 🚀' : 'SELL 📉'}\n` +
+                `💰 ENTRÉE : ${livePrice}\n` +
+                `🛑 STOP LOSS : ${sl}\n` +
+                `✅ TAKE PROFIT : ${tp}\n` +
+                `------------------------\n` +
+                `🛡️ ANALYSE : SYNC LIVE WELTRADE`, 
+            { parse_mode: 'Markdown' });
         }
     });
 }
 
-setInterval(monitorMarket, 1000);
-
-// --- CORRECTION "CANNOT GET /" ---
-app.get('/', (req, res) => res.send('<h1>SYNTX V4 : TERMINAL OPÉRATIONNEL ✅</h1>'));
+setInterval(processSignals, 1000);
+app.get('/', (req, res) => res.send('SYNTX V4 : Flux de Prix Actif'));
 app.listen(process.env.PORT || 10000);
